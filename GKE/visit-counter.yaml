@@ -1,0 +1,72 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visit-counter
+  labels:
+    app: visit-counter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: visit-counter
+  template:
+    metadata:
+      labels:
+        app: visit-counter
+    spec:
+      containers:
+      - name: visit-counter
+        image: "gcr.io/central-beach-194106/visit-counter-gke:v1"
+        env:
+        - name: REDISPORT
+          valueFrom:
+            secretKeyRef:
+              name: redb-redis-enterprise-database
+              key: port
+        - name: REDISHOST
+          valueFrom:
+            secretKeyRef:
+              name: redb-redis-enterprise-database
+              key: service_name
+        - name: REDISPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redb-redis-enterprise-database
+              key: password
+#        - name: REDISHOST
+#          value: "redis-enterprise-database-headless"
+#        - name: REDISPORT
+#          value: '11054'
+#        - name: REDISPASSWORD
+#          value: "DGuIA5Hp"
+        ports:
+        - name: http
+          containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: visit-counter
+spec:
+  type: LoadBalancer
+  selector:
+    app: visit-counter
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+
